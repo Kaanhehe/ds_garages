@@ -1,7 +1,7 @@
 # ds_garage
 A realistic garage script for FiveM utilizing a walk in garage system instead of boring menus and GUIs.
 
-/!\ IMPORTANT: I WILL NOT PROVIDE ANY SUPPORT FOR PEOPLE WHO COME FOR HELP WITH THEIR OWN PROGRAMMING MODIFICATIONS ! 
+### IMPORTANT: I WILL NOT PROVIDE ANY SUPPORT FOR PEOPLE WHO COME FOR HELP WITH THEIR OWN PROGRAMMING MODIFICATIONS ! 
 
 Need help with the script ? Go into the support Discord https://discord.gg/Ap25HKBbg4
 A verification that you bought the script will be necessary.
