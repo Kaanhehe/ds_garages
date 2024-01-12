@@ -24,8 +24,28 @@ client/utils.lua will allow you to:
 
 ## Installation:
 Download the pmc-instance https://github.com/Kaanhehe/pmc-instance
-
-Download menuv https://github.com/ThymonA/menuv/releases/download/v1.4.1/menuv_v1.4.1.zip
+```bash
+cd resources
+git clone https://github.com/Kaanhehe/pmc-instance.git
+```
+Download menuv https://github.com/ThymonA/menuv/releases
+Make sure to download the release of menuv and not the source code you download via the green button.
+```bash
+cd resources
+mkdir menuv
+cd menuv
+curl -LJO https://github.com/ThymonA/menuv/releases/download/v1.4.1/menuv_v1.4.1.zip
+tar -xf menuv_v1.4.1.zip
+del menuv_v1.4.1.zip
+```
+```sh
+cd resources
+mkdir menuv
+cd menuv
+wget https://github.com/ThymonA/menuv/releases/download/v1.4.1/menuv_v1.4.1.zip
+unzip menuv_v1.4.1.zip
+rm menuv_v1.4.1.zip
+```
 
 ### Step 1:
 Place the script pmc-instance in your resources directory.
