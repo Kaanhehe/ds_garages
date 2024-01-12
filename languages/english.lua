@@ -28,7 +28,8 @@
 
                     subMenu = {
                         title = "Are you sure?",
-                        subtitle = "Choose your answer with the buttons."
+                        subtitle = "Choose your answer with the buttons.",
+                        sell = "Sell",
                     }
                 }
             }

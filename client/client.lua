@@ -73,6 +73,7 @@ end
 
 local function loadPlayerGarages()
     ESX.TriggerServerCallback("ds_garages:sendNet", function(result)
+        local owns, blip
         if not result then return end
 
         for _, v in pairs(result) do
@@ -84,7 +85,7 @@ local function loadPlayerGarages()
             local garage = Config.GarageSystem.garages[owns]
             if not garage then return end
 
-            blip = loadBlip(garage.blipPosition, garage.blipColor, garage.blipText, garage.blipSprite, garage.markerDistance, garage.markerType, garage.markerSize, garage.markerColor, garage.elevatorleaveSpawnCoords)
+            blip = loadBlip(garage.blipPosition, garage.blipColor, garage.blipText, garage.blipSprite, garage.markerDistance, garage.markerType, garage.markerSize, garage.markerColor, garage.FootEnterMarker)
 
             garages[owns] = {
                 garage = garage,
@@ -236,8 +237,8 @@ CreateThread(function()
                 currentActionGarage = garageData.garage
                 currentActionGarageID = garageID
                 foundGarage = true
-            elseif garageData.garage.elevatorleaveSpawnCoords then
-                if #(coords - garageData.garage.elevatorleaveSpawnCoords.position) < 1.5 then
+            elseif garageData.garage.FootEnterMarker then
+                if #(coords - garageData.garage.FootEnterMarker.position) < 1.5 then
                     action = translate["messages"]["actionAccessToGarage"]
                     currentActionGarage = garageData.garage
                     currentActionGarageID = garageID
@@ -454,10 +455,6 @@ local function goIntoGarage(garage, garageId, vehicle)
             while DoesEntityExist(vehicle) do
                 Wait(0)
             end
-        else
-            if garage.elevatorspawnCoords then
-                garage.spawnCoords = garage.elevatorspawnCoords
-            end
         end
 
         if lib.progressBar({
@@ -606,23 +603,24 @@ local function teleportToExit(vehicle, vehicleProperties)
         RemoveVehicle(vehicle)
     end
 
-    if not vehicle then
-        if currentGarage.elevatorleaveSpawnCoords then
-            currentGarage.leaveSpawnCoords = currentGarage.elevatorleaveSpawnCoords
-        end
+    local SpawnCoords
+    if not vehicle and currentGarage.FootleaveSpawnCoords then
+        SpawnCoords = currentGarage.FootleaveSpawnCoords
+    else
+        SpawnCoords = currentGarage.leaveSpawnCoords
     end
 
     Debug("delete " .. #localVehicles)
 
     localVehicles = {}
 
-    ESX.Game.Teleport(playerPed, {x = currentGarage.leaveSpawnCoords.position.x, y = currentGarage.leaveSpawnCoords.position.y, z = currentGarage.leaveSpawnCoords.position.z, heading = currentGarage.leaveSpawnCoords.heading}, function()
-        SetGameplayCamRelativeRotation(0.0, 0.0, currentGarage.leaveSpawnCoords.heading)
+    ESX.Game.Teleport(playerPed, {x = SpawnCoords.position.x, y = SpawnCoords.position.y, z = SpawnCoords.position.z, heading = SpawnCoords.heading}, function()
+        SetGameplayCamRelativeRotation(0.0, 0.0, SpawnCoords.heading)
         ESX.TriggerServerCallback("ds_garages:sendNet", function(success)
             if not success then return end
 
             if vehicle then
-                spawnVehicle(vehicleProperties, currentGarage.leaveSpawnCoords)
+                spawnVehicle(vehicleProperties, SpawnCoords)
             end
 
             currentAction = nil
@@ -706,6 +704,7 @@ local function openGarageGui()
     local first = true
 
     for k, v in pairs(Config.GarageSystem.garages) do
+        if v.jobgarage then goto continue end
         if first then
             first = false
 
@@ -736,13 +735,14 @@ local function openGarageGui()
                     bought = true
                     garages[k] = {
                         garage = v,
-                        blip = loadBlip(v.blipPosition, v.blipColor, v.blipText, v.blipSprite, v.markerDistance, v.markerType, v.markerSize, v.markerColor, v.elevatorleaveSpawnCoords),
+                        blip = loadBlip(v.blipPosition, v.blipColor, v.blipText, v.blipSprite, v.markerDistance, v.markerType, v.markerSize, v.markerColor, v.FootEnterMarker),
                     }
 
                     Notify(translate["messages"]["boughtGarage"]:format(v.name, FormatMoney(v.price)))
                 end, "buyGarage", {garageID = k})
             end
         })
+        ::continue::
     end
 
     garageGui:Open()
@@ -807,33 +807,31 @@ local function openGarageSellerGui()
     local formatedSalePrice = FormatMoney(currentGarage.price * currentGarage.salePourcentage)
 
     garageSellerGui:AddButton({
-        label = "Validate (" .. formatedSalePrice .. ")",
+        label = translate["guis"]["manageGarage"]["buttons"]["garageSeller"]["subMenu"]["sell"] .. " (" .. formatedSalePrice .. ")",
         select = function () sellGarage(formatedSalePrice) end,
         value = garageSellerGui
     })
 end
 
--- All available actions on the garage manager gui
-local GARAGE_MANAGER_ACTIONS = {
-    -- Invite a friend gui
-    {
-        label = translate["guis"]["manageGarage"]["buttons"]["inviteAFriend"]["label"],
-        description = translate["guis"]["manageGarage"]["buttons"]["inviteAFriend"]["description"],
-        onSelect = openFriendsInviterGui,
-        menu = friendsInviterGui
-    },
-    -- Sell garage gui
-    {
-        label = translate["guis"]["manageGarage"]["buttons"]["garageSeller"]["label"],
-        description = translate["guis"]["manageGarage"]["buttons"]["garageSeller"]["description"],
-        onSelect = openGarageSellerGui,
-        menu = garageSellerGui
-    }
-}
-
 local function openGarageManagerGui()
     garageManagerGui:ClearItems()
-
+    -- All available actions on the garage manager gui
+    local GARAGE_MANAGER_ACTIONS = {
+        -- Invite a friend gui
+        {
+            label = translate["guis"]["manageGarage"]["buttons"]["inviteAFriend"]["label"],
+            description = translate["guis"]["manageGarage"]["buttons"]["inviteAFriend"]["description"],
+            onSelect = openFriendsInviterGui,
+            menu = friendsInviterGui
+        },
+        -- Sell garage gui
+        {
+            label = translate["guis"]["manageGarage"]["buttons"]["garageSeller"]["label"],
+            description = translate["guis"]["manageGarage"]["buttons"]["garageSeller"]["description"],
+            onSelect = openGarageSellerGui,
+            menu = garageSellerGui
+        }
+    }
     for _, action in pairs(GARAGE_MANAGER_ACTIONS) do
         garageManagerGui:AddButton({
             label = action.label,

@@ -28,7 +28,8 @@ Config.GarageSystem.Translation = {
 
                     subMenu = {
                         title = "Etes-vous sûr ?",
-                        subtitle = "Choisissez la réponse avec les boutons."
+                        subtitle = "Choisissez la réponse avec les boutons.",
+                        sell = "Vendre",
                     }
                 }
             }

@@ -30,6 +30,7 @@ git clone https://github.com/Kaanhehe/pmc-instance.git
 ```
 Download menuv https://github.com/ThymonA/menuv/releases
 Make sure to download the release of menuv and not the source code you download via the green button.
+To download on windows:
 ```bash
 cd resources
 mkdir menuv
@@ -38,6 +39,7 @@ curl -LJO https://github.com/ThymonA/menuv/releases/download/v1.4.1/menuv_v1.4.1
 tar -xf menuv_v1.4.1.zip
 del menuv_v1.4.1.zip
 ```
+To download on linux:
 ```sh
 cd resources
 mkdir menuv
@@ -45,6 +47,22 @@ cd menuv
 wget https://github.com/ThymonA/menuv/releases/download/v1.4.1/menuv_v1.4.1.zip
 unzip menuv_v1.4.1.zip
 rm menuv_v1.4.1.zip
+```
+Download ox_lib https://github.com/overextended/ox_lib/releases/latest/download/ox_lib.zip
+Make sure to download the release of ox_lib and not the source code you download via the green button.
+To download on windows:
+```bash
+cd resources
+curl -LJO https://github.com/overextended/ox_lib/releases/latest/download/ox_lib.zip
+tar -xf ox_lib.zip
+del ox_lib.zip
+```
+To download on linux:
+```sh
+cd resources
+wget https://github.com/overextended/ox_lib/releases/latest/download/ox_lib.zip
+unzip ox_lib.zip
+rm ox_lib.zip
 ```
 
 ### Step 1:

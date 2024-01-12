@@ -164,7 +164,6 @@ Functions = {
     end,
 
     ["getGarages"] = function (source)
-        xPlayer = nil
         local xPlayer = ESX.GetPlayerFromId(source)
 
         -- avoid using trigger to detect player first loaded
@@ -174,7 +173,7 @@ Functions = {
             Wait(0)
         end
 
-        garages = MySQL.query.await("SELECT `garage` FROM `ds_garages` WHERE `identifier` = ?", {
+        local garages = MySQL.query.await("SELECT `garage` FROM `ds_garages` WHERE `identifier` = ?", {
             xPlayer.getIdentifier()
         })
 
