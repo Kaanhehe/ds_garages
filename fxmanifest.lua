@@ -9,7 +9,7 @@ description 'A realistic garage script using walk in garages instead of menus an
 
 --shared_script "fixDeleteVehicle.lua" -- Uncomment if you use Kiminaze's AdvancedParking script -> https://kiminazes-script-gems.tebex.io/package/4287488
 
-shared_script '@ox_lib/init.lua' -- needed for many things
+shared_script '@ox_lib/init.lua'
 
 server_scripts {
 	"@oxmysql/lib/MySQL.lua",
@@ -37,11 +37,19 @@ client_scripts {
 
 dependencies {
     '/onesync',
-	'oxmysql'
+	'oxmysql',
+	'menuv',
+	'ox_lib',
+	'pmc-instance'
 }
 
 escrow_ignore {
-  "**.*"
+ 'client/utils.lua',
+ 'languages/*.*',
+ 'shared/*.*',
+ 'server/api.lua',
+ 'server/exports.lua',
+ 'fixDeleteVehicle.lua'
 }
 
 dependency '/assetpacks'
