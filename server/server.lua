@@ -135,6 +135,7 @@ Functions = {
             addToQueue(source)
         end
 
+---@diagnostic disable-next-line: param-type-mismatch
         NotifyByWebhook(source, 'PlayerLeftGarage', translate["messages"]["discordPlayerLeftGarage"]:format(GetPlayerName(source), targetdim))
 
         return true
