@@ -71,10 +71,11 @@ Functions = {
     ["createInstance"] = function (source, data)
         local source <const> = source
         local sourceID <const> = tonumber(source)
+        local targetdim = nil
         if data.jobgarage then
             targetdim = data.garageID
         else
-            targetdim = tonumber(source)
+            targetdim = tonumber(source) + #Config.GarageSystem.garages
         end
 
         if not data.garageID then return Debug("createInstance: no garageID specified") end
@@ -90,7 +91,7 @@ Functions = {
                 return false
             end
         end
-
+        if not targetdim then return Debug("createInstance: targetdim not found") end
         garageInstances[targetdim] = instance.new(targetdim)
         garageInstances[targetdim]:addPlayer(sourceID)
         spawned[targetdim] = true
@@ -104,10 +105,11 @@ Functions = {
         local defaultSource <const> = source
         local invited <const> = data.inviter and tonumber(defaultSource)
         local source <const> = data.inviter and data.inviter or tonumber(defaultSource)
+        local targetdim = nil
         if data.jobgarage then
             targetdim = data.garageID
         else 
-            targetdim = data.inviter and data.inviter or tonumber(defaultSource)
+            targetdim = source + #Config.GarageSystem.garages
         end
 
         if not garageInstances[targetdim] then return Debug("closeInstance: instance not found") end
@@ -122,9 +124,8 @@ Functions = {
             Debug("closeInstance: len=" .. #garageInstances[targetdim]:getPlayers())
 
             for _, playerID in pairs(garageInstances[targetdim]:getPlayers()) do
-                local playerID = tostring(playerID)
 
-                if GetPlayerPed(playerID) ~= 0 and playerID ~= tostring(targetdim) and not data.jobgarage then
+                if GetPlayerPed(playerID) ~= 0 and playerID ~= targetdim and not data.jobgarage then
                     TriggerClientEvent("ds_garages:leave", playerID)
                 end
             end

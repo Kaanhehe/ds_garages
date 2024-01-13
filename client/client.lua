@@ -23,6 +23,7 @@ local translate <const> = Config.GarageSystem.Translation
 local camera, buttonLoad, currentAction, currentActionGarage, currentActionGarageID, currentGarage, currentGarageID, cantUseReplaceGui, invitedBySomeone, inviterID
 local garages, localVehicles, garageGui, garageReplaceGui, garageManagerGui, friendsInviterGui, garageSellerGui = {}, {}, {}, {}, {}, {}, {}
 local canOpenGui = false
+local usedBefore = false
 local playerPed, playerID = PlayerPedId(), PlayerId()
 
 local points = {}
@@ -37,7 +38,7 @@ local function loadBlip(position, color, text, sprite, distance, type, size, mar
         })
 
         function point:nearby()
-            DrawMarker(type, position.x, position.y, position.z + 1.0, 0, 0, 0, 0, 0, 0, size[1], size[2], size[3], markercolor[1], markercolor[2], markercolor[3], 100, false, true, 2, false, false, false, false)
+            DrawMarker(type, position.x, position.y, position.z + 1.0, 0, 0, 0, 0, 0, 0, size[1], size[2], size[3], markercolor[1], markercolor[2], markercolor[3], 100, false, true, 2, false, "", "", false)
         end
         
         table.insert(points, point)
@@ -49,7 +50,7 @@ local function loadBlip(position, color, text, sprite, distance, type, size, mar
         })
 
         function point:nearby()
-            DrawMarker(elevator.markerType, elevator.position.x, elevator.position.y, elevator.position.z + 1.0, 0, 0, 0, 0, 0, 0, elevator.markerSize[1], elevator.markerSize[2], elevator.markerSize[3], elevator.markerColor[1], elevator.markerColor[2], elevator.markerColor[3], 100, false, true, 2, false, false, false, false)
+            DrawMarker(elevator.markerType, elevator.position.x, elevator.position.y, elevator.position.z + 1.0, 0, 0, 0, 0, 0, 0, elevator.markerSize[1], elevator.markerSize[2], elevator.markerSize[3], elevator.markerColor[1], elevator.markerColor[2], elevator.markerColor[3], 100, false, true, 2, false, "", "", false)
         end
         
         table.insert(points, point)
@@ -95,17 +96,18 @@ local function loadPlayerGarages()
     end, "getGarages")
 end
 
-RegisterNetEvent('esx:setJob')
 AddEventHandler('esx:setJob', function(job)
     ESX.PlayerData.job = job
     for k, v in pairs(blips) do
         RemoveBlip(v)
     end
-    for a, s in pairs(points) do
-        function s:nearby()
+    for k, v in pairs(points) do
+        function v:nearby()
         end
     end
     garages = {}
+    points = {}
+    blips = {}
     loadPlayerGarages()
 end)
 
@@ -113,6 +115,7 @@ end)
 local function initialize()
     Debug("initialize")
 
+    -- Initialize all the menus
 	garageReplaceGui = MenuV:CreateMenu(translate["guis"]["replaceVehicles"]["title"], translate["guis"]["replaceVehicles"]["subtitle"], 'topleft', 255, 0, 0, 'size-125', 'default', 'menuv', 'ds_garages_replacecars', 'native')
 	garageGui = MenuV:CreateMenu(translate["guis"]["availableGarages"]["title"], translate["guis"]["availableGarages"]["subtitle"], 'topleft', 255, 0, 0, 'size-125', 'default', 'menuv', 'ds_garages_mainmenu', 'native')
     garageManagerGui = MenuV:CreateMenu(translate["guis"]["manageGarage"]["title"], translate["guis"]["manageGarage"]["subtitle"], 'topleft', 255, 0, 0, 'size-125', 'default', 'menuv', 'ds_garages_garagemanager', 'native')
@@ -223,54 +226,61 @@ end)
 local nearManageGarageMarker = false
 
 CreateThread(function()
+    local action, foundGarage = nil, false
+    for garageID, garageData in pairs(garages) do
+        local point = lib.points.new({
+            coords = garageData.garage.blipPosition,
+            distance = 5,
+        })
+        function point:nearby()
+            currentAction = translate["messages"]["actionAccessToGarage"]
+            currentActionGarage = garageData.garage
+            currentActionGarageID = garageID
+            foundGarage = true
+        end
+        function point:onExit()
+            currentAction = nil
+            currentActionGarage = nil
+            currentActionGarageID = nil
+            foundGarage = false
+        end
+        if garageData.garage.FootEnterMarker then
+            local point = lib.points.new({
+                coords = garageData.garage.FootEnterMarker.position,
+                distance = 1.5,
+            })
+            function point:nearby()
+                currentAction = translate["messages"]["actionAccessToGarage"]
+                currentActionGarage = garageData.garage
+                currentActionGarageID = garageID
+                foundGarage = true
+            end
+            function point:onExit()
+                currentAction = nil
+                currentActionGarage = nil
+                currentActionGarageID = nil
+                foundGarage = false
+            end
+        end
+    end
+    for _, npc in pairs(Config.GarageSystem.npcs) do
+        local point = lib.points.new({
+            coords = npc.position,
+            distance = npc.useDistance,
+        })
+        function point:nearby()
+            action = translate["messages"]["actionAccessToNpc"]
+            canOpenGui = true
+        end
+        function point:onExit()
+            action = nil
+            canOpenGui = false
+        end
+    end
     while true do
         if playerPed ~= PlayerPedId() then playerPed = PlayerPedId() end
         -- Not sure if playerID is static
         if playerID ~= PlayerId() then playerID = PlayerId() end
-
-        local coords = GetEntityCoords(playerPed)
-        local action, foundGarage
-
-        for garageID, garageData in pairs(garages) do
-            if #(coords - garageData.garage.blipPosition) < 5 then
-                action = translate["messages"]["actionAccessToGarage"]
-                currentActionGarage = garageData.garage
-                currentActionGarageID = garageID
-                foundGarage = true
-            elseif garageData.garage.FootEnterMarker then
-                if #(coords - garageData.garage.FootEnterMarker.position) < 1.5 then
-                    action = translate["messages"]["actionAccessToGarage"]
-                    currentActionGarage = garageData.garage
-                    currentActionGarageID = garageID
-                    foundGarage = true
-                end
-            end
-        end
-
-        if not foundGarage and currentActionGarage then
-            currentActionGarage = nil
-            currentActionGarageID = nil
-        end
-
-        for _, npc in pairs(Config.GarageSystem.npcs) do
-            if #(coords - npc.position) < npc.useDistance then
-                action = translate["messages"]["actionAccessToNpc"]
-                canOpenGui = true
-            else
-                canOpenGui = false
-            end
-        end
-
-        if currentGarage and not invitedBySomeone then
-             -- If player is next to the garage manager marker
-             if #(coords - currentGarage.manageGarage.marker.position) <= currentGarage.manageGarage.marker.useDistance and not currentGarage.jobgarage then
-                action = translate["messages"]["actionManageGarage"]
-                nearManageGarageMarker = true
-            elseif nearManageGarageMarker then
-                action = translate["messages"]["actionLeaveGarage"]
-                nearManageGarageMarker = false
-            end
-        end
 
         if action then
             currentAction = action
@@ -293,7 +303,7 @@ end)
 
 
 local function spawnLocalVehicles(vehicles, garage, garageId, add)
-    if currentGarage.friendlyfire then
+    if not currentGarage.friendlyfire then
         SetPlayerInvincible(playerID, true)
     end
 
@@ -315,9 +325,10 @@ local function spawnLocalVehicles(vehicles, garage, garageId, add)
         Debug(garage and json.encode(garage.vehiclePositions[k].position) or json.encode(v.position))
         Debug(garage and json.encode(garage.vehiclePositions[k].heading) or json.encode(v.heading))
 
+        local spawned = false
         if garage.jobgarage and add then
 
-            spot = k
+            local spot = k
 
             while not spawned do
                 
@@ -336,8 +347,6 @@ local function spawnLocalVehicles(vehicles, garage, garageId, add)
                         end
 
                         SetVehicleData(spawnedVehicle, vehicleProperties)
-
-                        --localVehicles[#localVehicles + 1] = spawnedVehicle
 
                         Debug("spawned vehicle")
 
@@ -362,8 +371,6 @@ local function spawnLocalVehicles(vehicles, garage, garageId, add)
                 end
 
                 SetVehicleData(spawnedVehicle, vehicleProperties)
-
-                --localVehicles[#localVehicles + 1] = spawnedVehicle
 
                 Debug("spawned vehicle")
 
@@ -483,6 +490,18 @@ local function goIntoGarage(garage, garageId, vehicle)
                     spawnVehicles(garage, garageId, vehicle, vehicleProperties)
                 end
                 currentAction = translate["messages"]["actionLeaveGarage"]
+                local point = lib.points.new({
+                    coords = garage.manageGarage.marker.position,
+                    distance = garage.manageGarage.marker.useDistance,
+                })
+                function point:nearby()
+                    currentAction = translate["messages"]["actionManageGarage"]
+                    nearManageGarageMarker = true
+                end
+                function point:onExit()
+                    currentAction = translate["messages"]["actionLeaveGarage"]
+                    nearManageGarageMarker = false
+                end
             end, "createInstance", { garageID = currentGarageID, jobgarage = garage.jobgarage })
         end)
     end)
@@ -610,7 +629,7 @@ local function teleportToExit(vehicle, vehicleProperties)
         SpawnCoords = currentGarage.leaveSpawnCoords
     end
 
-    Debug("delete " .. #localVehicles)
+    Debug("deleted " .. #localVehicles)
 
     localVehicles = {}
 
@@ -642,6 +661,7 @@ local function teleportToExit(vehicle, vehicleProperties)
 end
 
 local function leaveGarage()
+    local inVehicle, vehicle, vehicleProperties
     if not currentGarage then return end
 
     if IsPedInAnyVehicle(playerPed, false) then
@@ -678,7 +698,7 @@ local function leaveGarage()
 
     launchFade()
 
-    if currentGarage.friendlyfire then
+    if not currentGarage.friendlyfire then
         SetPlayerInvincible(playerID, false)
     end
 
@@ -691,7 +711,7 @@ local function leaveGarage()
         if not success then return end
 
         teleportToExit(vehicle, vehicleProperties)
-    end, "leaveGarageWithVehicle", {plate = vehicleProperties.plate, garageID = currentGarageID})
+    end, "leaveGarageWithVehicle", {plate = vehicleProperties?.plate, garageID = currentGarageID})
 end
 
 local function openGarageGui()
@@ -790,7 +810,11 @@ local function sellGarage(formatedSalePrice)
         end
 
         RemoveBlip(garages[currentGarageID].blip)
+        local point = points[currentGarageID]
+        function point:nearby()
+        end
         garages[currentGarageID] = nil
+        points[currentGarageID] = nil
 
         MenuV:CloseAll()
         leaveGarage()
@@ -845,8 +869,6 @@ local function openGarageManagerGui()
 
     garageManagerGui:Open()
 end
-
-local usedBefore = false
 
 local function createCooldown()
     CreateThread(function()
@@ -907,7 +929,7 @@ CreateThread(function()
                 marker.color.x,
                 marker.color.y,
                 marker.color.z,
-                100, false, true, 2, false, nil, nil, false
+                100, false, true, 2, false, "", "", false
             )
         end
 

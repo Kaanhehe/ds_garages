@@ -51,7 +51,7 @@ Config.GarageSystem = {
             jobgarage = if you want the garage be a job garage set to true (Boolean)
             job = the job you want to have access to the garage (only if jobgarage is true) (String)
 
-            friendlyfire = false = you will be invincible in the garage, true = the opposite (Boolean)
+            friendlyfire = false/true -- false = you will be invincible in the garage, true = you are not invincible and can be killed (Boolean)
 
             blipPosition = vector3(37.13, -907.6, 30.92), -- Blip position of the garage (on the map) (Vector3)
             blipText = "Garage - 2 places", -- Blip text of the garage (on the map) (String)
