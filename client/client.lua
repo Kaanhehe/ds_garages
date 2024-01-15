@@ -38,9 +38,9 @@ local function loadBlip(position, color, text, sprite, distance, type, size, mar
         })
 
         function point:nearby()
-            DrawMarker(type, position.x, position.y, position.z + 1.0, 0, 0, 0, 0, 0, 0, size[1], size[2], size[3], markercolor[1], markercolor[2], markercolor[3], 100, false, true, 2, false, "", "", false)
+            DrawMarker(type, position.x, position.y, position.z + 1.0, 0, 0, 0, 0, 0, 0, size[1], size[2], size[3], markercolor[1], markercolor[2], markercolor[3], 100, false, true, 2, false, false, false, false)
         end
-        
+
         table.insert(points, point)
     end
     if elevator then
@@ -50,7 +50,7 @@ local function loadBlip(position, color, text, sprite, distance, type, size, mar
         })
 
         function point:nearby()
-            DrawMarker(elevator.markerType, elevator.position.x, elevator.position.y, elevator.position.z + 1.0, 0, 0, 0, 0, 0, 0, elevator.markerSize[1], elevator.markerSize[2], elevator.markerSize[3], elevator.markerColor[1], elevator.markerColor[2], elevator.markerColor[3], 100, false, true, 2, false, "", "", false)
+            DrawMarker(elevator.markerType, elevator.position.x, elevator.position.y, elevator.position.z + 1.0, 0, 0, 0, 0, 0, 0, elevator.markerSize[1], elevator.markerSize[2], elevator.markerSize[3], elevator.markerColor[1], elevator.markerColor[2], elevator.markerColor[3], 100, false, true, 2, false, false, false, false)
         end
         
         table.insert(points, point)
@@ -109,6 +109,7 @@ AddEventHandler('esx:setJob', function(job)
     points = {}
     blips = {}
     loadPlayerGarages()
+    SetupPoints()
 end)
 
 
@@ -139,6 +140,7 @@ local function initialize()
 
     CreateThread(function()
         loadPlayerGarages()
+        SetupPoints()
     end)
 end
 
@@ -224,77 +226,81 @@ end)
 ]]
 
 local nearManageGarageMarker = false
-
-CreateThread(function()
-    local action, foundGarage = nil, false
-    for garageID, garageData in pairs(garages) do
-        local point = lib.points.new({
-            coords = garageData.garage.blipPosition,
-            distance = 5,
-        })
-        function point:nearby()
-            currentAction = translate["messages"]["actionAccessToGarage"]
-            currentActionGarage = garageData.garage
-            currentActionGarageID = garageID
-            foundGarage = true
-        end
-        function point:onExit()
-            currentAction = nil
-            currentActionGarage = nil
-            currentActionGarageID = nil
-            foundGarage = false
-        end
-        if garageData.garage.FootEnterMarker then
+function SetupPoints()
+    Wait(1000) -- TODO: Find a better way to do this (wait for garages var to be filled by loadPlayerGarages())
+    CreateThread(function()
+        local action, foundGarage = nil, false
+        for garageID, garageData in pairs(garages) do
             local point = lib.points.new({
-                coords = garageData.garage.FootEnterMarker.position,
-                distance = 1.5,
+                coords = garageData.garage.blipPosition,
+                distance = 5,
             })
+            print(point)
+            print(garageData.garage.blipPosition)
             function point:nearby()
-                currentAction = translate["messages"]["actionAccessToGarage"]
+                action = translate["messages"]["actionAccessToGarage"]
                 currentActionGarage = garageData.garage
                 currentActionGarageID = garageID
                 foundGarage = true
             end
             function point:onExit()
-                currentAction = nil
+                action = nil
                 currentActionGarage = nil
                 currentActionGarageID = nil
                 foundGarage = false
             end
+            if garageData.garage.FootEnterMarker then
+                local point = lib.points.new({
+                    coords = garageData.garage.FootEnterMarker.position,
+                    distance = 1.5,
+                })
+                function point:nearby()
+                    action = translate["messages"]["actionAccessToGarage"]
+                    currentActionGarage = garageData.garage
+                    currentActionGarageID = garageID
+                    foundGarage = true
+                end
+                function point:onExit()
+                    action = nil
+                    currentActionGarage = nil
+                    currentActionGarageID = nil
+                    foundGarage = false
+                end
+            end
         end
-    end
-    for _, npc in pairs(Config.GarageSystem.npcs) do
-        local point = lib.points.new({
-            coords = npc.position,
-            distance = npc.useDistance,
-        })
-        function point:nearby()
-            action = translate["messages"]["actionAccessToNpc"]
-            canOpenGui = true
+        for _, npc in pairs(Config.GarageSystem.npcs) do
+            local point = lib.points.new({
+                coords = npc.position,
+                distance = npc.useDistance,
+            })
+            function point:nearby()
+                action = translate["messages"]["actionAccessToNpc"]
+                canOpenGui = true
+            end
+            function point:onExit()
+                action = nil
+                canOpenGui = false
+            end
         end
-        function point:onExit()
-            action = nil
-            canOpenGui = false
-        end
-    end
-    while true do
-        if playerPed ~= PlayerPedId() then playerPed = PlayerPedId() end
-        -- Not sure if playerID is static
-        if playerID ~= PlayerId() then playerID = PlayerId() end
+        while true do
+            if playerPed ~= PlayerPedId() then playerPed = PlayerPedId() end
+            -- Not sure if playerID is static
+            if playerID ~= PlayerId() then playerID = PlayerId() end
 
-        if action then
-            currentAction = action
-        elseif not currentGarage then
-            currentAction = nil
-        end
+            if action then
+                currentAction = action
+            elseif not currentGarage then
+                currentAction = nil
+            end
 
-        if currentGarage then
-            Wait(500)
-        else
-            Wait(800)
+            if currentGarage then
+                Wait(500)
+            else
+                Wait(800)
+            end
         end
-    end
-end)
+    end)
+end
 
 
 --[[
@@ -442,6 +448,7 @@ end
 local function goIntoGarage(garage, garageId, vehicle)
     CreateThread(function()
         local foundGround, zCoord = false, -500.0
+        local vehicleProperties = nil
 
         while not foundGround do
             zCoord = zCoord + 10.0
@@ -711,7 +718,7 @@ local function leaveGarage()
         if not success then return end
 
         teleportToExit(vehicle, vehicleProperties)
-    end, "leaveGarageWithVehicle", {plate = vehicleProperties?.plate, garageID = currentGarageID})
+    end, "leaveGarageWithVehicle", {plate = vehicleProperties.plate, garageID = currentGarageID})
 end
 
 local function openGarageGui()
@@ -929,7 +936,7 @@ CreateThread(function()
                 marker.color.x,
                 marker.color.y,
                 marker.color.z,
-                100, false, true, 2, false, "", "", false
+                100, false, true, 2, false, false, false, false
             )
         end
 
