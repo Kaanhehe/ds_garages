@@ -71,33 +71,37 @@ Functions = {
     ["createInstance"] = function (source, data)
         local source <const> = source
         local sourceID <const> = tonumber(source)
-        local targetdim = nil
+        local targetinst = nil
         if data.jobgarage then
-            targetdim = data.garageID
+            targetinst = data.garageID
         else
-            targetdim = tonumber(source) + #Config.GarageSystem.garages
+            targetinst = tonumber(source) + #Config.GarageSystem.garages
         end
 
         if not data.garageID then return Debug("createInstance: no garageID specified") end
-
-        if garageInstances[targetdim] and not data.jobgarage then
-            if #garageInstances[targetdim]:getPlayers() > 0 then return false end
-        elseif garageInstances[targetdim] and data.jobgarage then
-            if spawned[targetdim] then
-                garageInstances[targetdim]:addPlayer(sourceID)
+        if not targetinst then return Debug("createInstance: targetinst not found") end
+        
+        if garageInstances[targetinst] then
+            if not data.jobgarage and  #garageInstances[targetinst]:getPlayers() > 0 then return false end -- if garage is not a job garage and there is already a player in it, return false
+            if data.jobgarage then
+                garageInstances[targetinst]:addPlayer(sourceID)
                 Player(source).state.garageID = data.garageID
 
-                NotifyByWebhook(source, 'PlayerEnteredGarage', translate["messages"]["discordPlayerEnteredGarage"]:format(GetPlayerName(source), targetdim, data.garageID))
-                return false
+                NotifyByWebhook(source, 'PlayerEnteredGarage', translate["messages"]["discordPlayerEnteredGarage"]:format(GetPlayerName(source), targetinst, data.garageID))
+                if spawned[targetinst] then -- if vehicles are already spawned, return false
+                    return false
+                else -- if vehicles are not spawned, return true, just in case
+                    spawned[targetinst] = true
+                    return true
+                end
             end
         end
-        if not targetdim then return Debug("createInstance: targetdim not found") end
-        garageInstances[targetdim] = instance.new(targetdim)
-        garageInstances[targetdim]:addPlayer(sourceID)
-        spawned[targetdim] = true
-        Player(source).state.garageID = data.garageID
+        garageInstances[targetinst] = instance.new(targetinst) -- create new instance
+        garageInstances[targetinst]:addPlayer(sourceID) -- add player to created instance
+        spawned[targetinst] = true -- mark vehicles as spawned
+        Player(source).state.garageID = data.garageID -- Idk why or what this does, just leave it here
 
-        NotifyByWebhook(source, 'PlayerEnteredGarage', translate["messages"]["discordPlayerEnteredGarage"]:format(GetPlayerName(source), targetdim, data.garageID))
+        NotifyByWebhook(source, 'PlayerEnteredGarage', translate["messages"]["discordPlayerEnteredGarage"]:format(GetPlayerName(source), targetinst, data.garageID))
         return true
     end,
 
@@ -105,14 +109,14 @@ Functions = {
         local defaultSource <const> = source
         local invited <const> = data.inviter and tonumber(defaultSource)
         local source <const> = data.inviter and data.inviter or tonumber(defaultSource)
-        local targetdim = nil
+        local targetinst = nil
         if data.jobgarage then
-            targetdim = data.garageID
+            targetinst = data.garageID
         else 
-            targetdim = source + #Config.GarageSystem.garages
+            targetinst = source + #Config.GarageSystem.garages
         end
 
-        if not garageInstances[targetdim] then return Debug("closeInstance: instance not found") end
+        if not garageInstances[targetinst] then return Debug("closeInstance: instance not found") end
 
         Player(defaultSource).state.garageID = nil
 
@@ -121,22 +125,22 @@ Functions = {
 
             garageInstances[data.inviter]:removePlayer(invited)
         else
-            Debug("closeInstance: len=" .. #garageInstances[targetdim]:getPlayers())
+            Debug("closeInstance: len=" .. #garageInstances[targetinst]:getPlayers())
 
-            for _, playerID in pairs(garageInstances[targetdim]:getPlayers()) do
+            for _, playerID in pairs(garageInstances[targetinst]:getPlayers()) do
 
-                if GetPlayerPed(playerID) ~= 0 and playerID ~= targetdim and not data.jobgarage then
+                if GetPlayerPed(playerID) ~= 0 and playerID ~= targetinst and not data.jobgarage then
                     TriggerClientEvent("ds_garages:leave", playerID)
                 end
             end
 
-            garageInstances[targetdim]:removePlayer(source)
-            Debug("closeInstance: final len=" .. #garageInstances[targetdim]:getPlayers())
+            garageInstances[targetinst]:removePlayer(source)
+            Debug("closeInstance: final len=" .. #garageInstances[targetinst]:getPlayers())
             addToQueue(source)
         end
 
 ---@diagnostic disable-next-line: param-type-mismatch
-        NotifyByWebhook(source, 'PlayerLeftGarage', translate["messages"]["discordPlayerLeftGarage"]:format(GetPlayerName(source), targetdim))
+        NotifyByWebhook(source, 'PlayerLeftGarage', translate["messages"]["discordPlayerLeftGarage"]:format(GetPlayerName(source), targetinst))
 
         return true
     end,
