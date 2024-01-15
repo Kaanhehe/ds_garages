@@ -18,7 +18,6 @@ server_scripts {
 	"shared/utils.lua",
 	"shared/config.lua",
 	"languages/german.lua",
-
 	"server/api.lua",
     "server/server.lua",
 	"server/networking.lua"
@@ -39,8 +38,7 @@ dependencies {
     '/onesync',
 	'oxmysql',
 	'menuv',
-	'ox_lib',
-	'pmc-instance'
+	'ox_lib'
 }
 
 escrow_ignore {
