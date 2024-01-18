@@ -235,8 +235,6 @@ function SetupPoints()
                 coords = garageData.garage.blipPosition,
                 distance = 5,
             })
-            print(point)
-            print(garageData.garage.blipPosition)
             function point:nearby()
                 action = translate["messages"]["actionAccessToGarage"]
                 currentActionGarage = garageData.garage
