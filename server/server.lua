@@ -319,7 +319,7 @@ Functions = {
         if garage.blackListVehicles[data.vehicleProperties.model] then return end
 
         if garage.whitelistVehicles.enable then
-            if not garage.whitelistVehicles.vehicles[vehicleProperties.model] then return end
+            if not garage.whitelistVehicles.vehicles[data.vehicleProperties.model] then return end
         end
 
         local plate <const> = data.vehicleProperties.plate

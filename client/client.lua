@@ -38,6 +38,7 @@ local function loadBlip(position, color, text, sprite, distance, type, size, mar
         })
 
         function point:nearby()
+---@diagnostic disable-next-line: param-type-mismatch
             DrawMarker(type, position.x, position.y, position.z + 1.0, 0, 0, 0, 0, 0, 0, size[1], size[2], size[3], markercolor[1], markercolor[2], markercolor[3], 100, false, true, 2, false, false, false, false)
         end
 
@@ -50,6 +51,7 @@ local function loadBlip(position, color, text, sprite, distance, type, size, mar
         })
 
         function point:nearby()
+---@diagnostic disable-next-line: param-type-mismatch
             DrawMarker(elevator.markerType, elevator.position.x, elevator.position.y, elevator.position.z + 1.0, 0, 0, 0, 0, 0, 0, elevator.markerSize[1], elevator.markerSize[2], elevator.markerSize[3], elevator.markerColor[1], elevator.markerColor[2], elevator.markerColor[3], 100, false, true, 2, false, false, false, false)
         end
         
@@ -336,7 +338,7 @@ local function spawnLocalVehicles(vehicles, garage, garageId, add)
 
             while not spawned do
                 
-                if lib.getClosestVehicle(garage.vehiclePositions[spot].position, 1.5) then
+                if lib.getClosestVehicle(garage.vehiclePositions[spot].position, 1.5, false) then
                     spot = spot +1
                 else
                     spawned = true
@@ -360,7 +362,7 @@ local function spawnLocalVehicles(vehicles, garage, garageId, add)
             end
         elseif garage.jobgarage then
 
-            spawned = lib.getClosestVehicle(garage.vehiclePositions[k].position, 1.5)
+            spawned = lib.getClosestVehicle(garage.vehiclePositions[k].position, 1.5, false) ~= nil
 
             if spawned then goto continue end
 
@@ -623,8 +625,8 @@ local function teleportToGarage(garage, garageID)
 end
 
 local function teleportToExit(vehicle, vehicleProperties)
-    for _, vehicle in pairs(localVehicles) do
-        RemoveVehicle(vehicle)
+    for _, localvehicle in pairs(localVehicles) do
+        RemoveVehicle(localvehicle)
     end
 
     local SpawnCoords
@@ -711,7 +713,9 @@ local function leaveGarage()
         Debug("no vehicle with exit")
         return teleportToExit()
     end
-
+    if not vehicleProperties then
+        return Notify(translate["messages"]["somethingWentWrong"])
+    end
     ESX.TriggerServerCallback("ds_garages:sendNet", function(success)
         if not success then return end
 
@@ -934,6 +938,7 @@ CreateThread(function()
                 marker.color.x,
                 marker.color.y,
                 marker.color.z,
+---@diagnostic disable-next-line: param-type-mismatch
                 100, false, true, 2, false, false, false, false
             )
         end
